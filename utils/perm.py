@@ -9,8 +9,9 @@ from utils import json
 
 
 class permission_check:
-    def __init__(self, roles: list = None):
+    def __init__(self, roles: list = None, user: bool = False):
         self.roles = roles
+        self.set_user = user
 
     def __call__(self, func):
         def wrapper(*args, **kwargs):
@@ -34,6 +35,9 @@ class permission_check:
 
             if not (self.roles is None or user.groups.filter(name__in=self.roles).exists()):
                 return json.response({'result': 1, 'message': "无权访问"})
+
+            if self.set_user:
+                kwargs['user'] = user
 
             return func(*args, **kwargs)
 
