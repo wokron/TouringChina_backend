@@ -11,10 +11,16 @@ from utils.perm import permission_check
 # Create your views here.
 class ScheduleView(APIView):
     def get(self, request):
+        """
+        list all train schedule
+        """
         return json.response({"schedules": ScheduleSerializer(Schedule.objects.all(), many=True).data})
 
     @permission_check(['Train Admin'])
     def post(self, request):
+        """
+        add new schedule to timetable
+        """
         schedule_no = request.data.get('schedule_no', None)
         station_ids = request.data.get('station_ids', None)
         carriage_ids = request.data.get('carriage_ids', None)
@@ -45,6 +51,10 @@ class ScheduleView(APIView):
 class ScheduleIdView(APIView):
     @permission_check(['Train Admin'])
     def put(self, request, schedule_id):
+        """
+        modify schedule
+        :param schedule_id: the schedule id to modify
+        """
         if not Schedule.objects.filter(id=schedule_id).exists():
             return json.response({'result': 1, 'message': "行程不存在"})
 
@@ -75,6 +85,10 @@ class ScheduleIdView(APIView):
 
     @permission_check(['Train Admin'])
     def delete(self, request, schedule_id):
+        """
+        delete schedule
+        :param schedule_id: the schedule id to delete
+        """
         Schedule.objects.filter(id=schedule_id).delete()
 
         # todo: need to info users who buy the ticket of this schedule
@@ -84,10 +98,16 @@ class ScheduleIdView(APIView):
 
 class StationView(APIView):
     def get(self, request):
+        """
+        list all stations
+        """
         return json.response({'stations': StationSerializer(Station.objects.all(), many=True).data})
 
     @permission_check(['Train Admin'])
     def post(self, request):
+        """
+        add new train station
+        """
         station_no = request.data.get('station_no', None)
         name = request.data.get('name', None)
 
@@ -105,10 +125,16 @@ class StationView(APIView):
 
 class CarriageView(APIView):
     def get(self, request):
+        """
+        list all carriages
+        """
         return json.response({'carriages': CarriageSerializer(Carriage.objects.all(), many=True).data})
 
     @permission_check(['Train Admin'])
     def post(self, request):
+        """
+        add new carriage
+        """
         name = request.data.get('name', None)
         seat_num = request.data.get('seat_num', None)
 
