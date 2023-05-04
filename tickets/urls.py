@@ -1,7 +1,8 @@
 from django.urls import path
 
-from schedules import views
+from tickets import views
 
 urlpatterns = [
-    # path("stations", views.StationView.as_view()),
+    path("<int:ticket_id>", views.TicketIdView.as_view()),
+    path("", views.TicketView.as_view()),
 ]
