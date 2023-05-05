@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from contacts.serializers import ContactSerializer
 from schedules.models import Carriage, Schedule
 from tickets.models import Ticket
 
@@ -20,11 +21,11 @@ class TicketSerializer(serializers.ModelSerializer):
     is_expired = serializers.SerializerMethodField()
     schedule = ScheduleSerializer()
     carriage = CarriageSerializer()
+    contact = ContactSerializer()
 
     class Meta:
         model = Ticket
-        fields = "__all__"
         exclude = ['user']
 
     def get_is_expired(self, obj):
-        return obj.is_expire()
+        return obj.is_expired()
