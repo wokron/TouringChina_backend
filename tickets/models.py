@@ -3,6 +3,7 @@ from datetime import timedelta, datetime
 from django.contrib.auth.models import User
 from django.db import models
 
+from contacts.models import Contact
 from schedules.models import Schedule, Carriage
 
 
@@ -16,7 +17,9 @@ class Ticket(models.Model):
 
     schedule = models.ForeignKey(to=Schedule, on_delete=models.SET_NULL)
     carriage = models.ForeignKey(to=Carriage, on_delete=models.CASCADE)
+
     user = models.ForeignKey(to=User, on_delete=models.CASCADE, related_name='tickets')
+    contact = models.ForeignKey(to=Contact, on_delete=models.RESTRICT, related_name='tickets')
 
     def is_expired(self):
         return not self.is_paid and self.create_time + timedelta(days=1) > datetime.now()
