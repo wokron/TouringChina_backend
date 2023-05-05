@@ -137,6 +137,7 @@ class CarriageView(APIView):
         """
         name = request.data.get('name', None)
         seat_num = request.data.get('seat_num', None)
+        increase_rate = request.data.get('increase_rate', None)
 
         if not seat_num or not name:
             return json.response({'result': 1, 'message': "必须设置车厢名和车厢座位数"})
@@ -145,6 +146,10 @@ class CarriageView(APIView):
             return json.response({'result': 1, 'message': "车厢名已存在"})
 
         carriage = Carriage(name=name, seat_num=seat_num)
+
+        if increase_rate:
+            carriage.increase_rate = increase_rate
+
         carriage.save()
 
         return json.response({'result': 0, 'message': "添加车厢成功"})

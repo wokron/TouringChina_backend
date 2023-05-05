@@ -56,6 +56,7 @@ class ScheduleToStation(models.Model):
 class Carriage(models.Model):
     name = models.CharField(max_length=32)
     seat_num = models.IntegerField()
+    increase_rate = models.DecimalField(max_digits=10, decimal_places=2, default=1)
 
 
 class ScheduleToCarriage(models.Model):
