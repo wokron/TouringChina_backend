@@ -37,6 +37,13 @@ class Schedule(models.Model):
             )
             schedule2carriage.save()
 
+    def is_option_schedule(self, obj):
+        self_first = self.stations.first()
+        self_last = self.stations.last()
+        obj_first = obj.stations.first()
+        obj_last = obj.stations.last()
+        return self_first == obj_first and self_last == obj_last
+
 
 class Station(models.Model):
     station_no = models.CharField(max_length=32, unique=True)
