@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "accounts.apps.AccountsConfig",
     "schedules.apps.SchedulesConfig",
     "tickets.apps.TicketsConfig",
+    "contacts.apps.ContactsConfig",
 ]
 
 MIDDLEWARE = [
