@@ -4,6 +4,7 @@ from rest_framework.views import APIView
 
 from schedules.models import Schedule, Station, Carriage
 from schedules.serializers import ScheduleSerializer, StationSerializer, CarriageSerializer
+from system_messages.models import Message
 from utils import json
 from utils.perm import permission_check
 
@@ -49,11 +50,10 @@ class ScheduleView(APIView):
 
 
 class ScheduleIdView(APIView):
-    @permission_check(['Train Admin'])
-    def put(self, request, schedule_id):
+    @permission_check(['Train Admin'], user=True)
+    def put(self, request, schedule_id, user):
         """
         modify schedule
-        :param schedule_id: the schedule id to modify
         """
         if not Schedule.objects.filter(id=schedule_id).exists():
             return json.response({'result': 1, 'message': "行程不存在"})
@@ -79,19 +79,41 @@ class ScheduleIdView(APIView):
             schedule.departure_time = datetime.fromisoformat(departure_time)
             schedule.save()
 
-        # todo: need to info users who buy the ticket of this schedule
+        message = Message(
+            message=f"您购买的车次”{schedule.schedule_no}“已发生修改。您可以免费改签其他车次",
+            from_user=user,
+        )
+        message.save()
+
+        for ticket in schedule.tickets.all():
+            ticket.is_schedule_modified = True
+            ticket.save()
+            message.to_users.add(ticket.user)
 
         return json.response({'result': 0, 'message': "行程修改成功"})
 
-    @permission_check(['Train Admin'])
-    def delete(self, request, schedule_id):
+    @permission_check(['Train Admin'], user=True)
+    def delete(self, request, schedule_id, user):
         """
         delete schedule
-        :param schedule_id: the schedule id to delete
         """
-        Schedule.objects.filter(id=schedule_id).delete()
+        schedule = Schedule.objects.filter(id=schedule_id).first()
 
-        # todo: need to info users who buy the ticket of this schedule
+        if not schedule:
+            json.response({'result': 1, 'message': "未找到要删除的行程"})
+
+        schedule.delete()
+
+        message = Message(
+            message=f"您购买的车次”{schedule.schedule_no}“已被取消。您可以免费改签其他车次",
+            from_user=user,
+        )
+        message.save()
+
+        for ticket in schedule.tickets.all():
+            ticket.is_schedule_modified = True
+            ticket.save()
+            message.to_users.add(ticket.user)
 
         return json.response({'result': 0, 'message': "行程已删除"})
 
