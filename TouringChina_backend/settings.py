@@ -43,7 +43,7 @@ INSTALLED_APPS = [
     "schedules.apps.SchedulesConfig",
     "tickets.apps.TicketsConfig",
     "contacts.apps.ContactsConfig",
-    "messages.apps.MessagesConfig",
+    "system_messages.apps.MessagesConfig",
 ]
 
 MIDDLEWARE = [
