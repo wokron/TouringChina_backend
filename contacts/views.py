@@ -33,6 +33,8 @@ class ContactView(APIView):
         if user.contacts.filter(id_card=id_card).exists():
             return json.response({'result': 1, 'message': "该联系人已添加"})
 
+        # todo: need to verify identity
+
         contact = Contact(
             name=name,
             gender=gender,
