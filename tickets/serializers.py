@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from contacts.serializers import ContactSerializer
 from schedules.models import Carriage, Schedule
+from schedules.serializers import StationSerializer
 from tickets.models import Ticket
 
 
@@ -12,9 +13,18 @@ class CarriageSerializer(serializers.ModelSerializer):
 
 
 class ScheduleSerializer(serializers.ModelSerializer):
+    departure_station = serializers.SerializerMethodField()
+    destination_station = serializers.SerializerMethodField()
+
     class Meta:
         model = Schedule
-        fields = ['id', 'schedule_no', 'departure_time']
+        fields = ['id', 'schedule_no', 'departure_time', 'departure_station', 'destination_station']
+
+    def get_departure_station(self, obj):
+        return StationSerializer(obj.stations.first()).data
+
+    def get_destination_station(self, obj):
+        return StationSerializer(obj.stations.last()).data
 
 
 class TicketSerializer(serializers.ModelSerializer):
