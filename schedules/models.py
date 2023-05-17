@@ -42,7 +42,7 @@ class Schedule(models.Model):
         self_last = self.stations.last()
         obj_first = obj.stations.first()
         obj_last = obj.stations.last()
-        return self_first == obj_first and self_last == obj_last
+        return (obj != self) and self_first == obj_first and self_last == obj_last
 
 
 class Station(models.Model):

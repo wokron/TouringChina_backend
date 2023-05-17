@@ -15,7 +15,15 @@ class ScheduleView(APIView):
         """
         list all train schedule
         """
-        return json.response({"schedules": ScheduleSerializer(Schedule.objects.all(), many=True).data})
+        schedule_id_to_change = request.query_params.get('change', -1)
+        schedule_to_change = Schedule.objects.filter(id=schedule_id_to_change).first()
+        if schedule_to_change != -1 and not schedule_to_change:
+            return json.response({'result': 1, 'message': "没有找到改签之前的行程"})
+        schedules = Schedule.objects.all()
+        if schedule_to_change:
+            schedules = filter(lambda elm: elm.is_option_schedule(schedule_to_change), schedules)
+
+        return json.response({"schedules": ScheduleSerializer(schedules, many=True).data})
 
     @permission_check(['Train Admin'])
     def post(self, request):
@@ -50,6 +58,16 @@ class ScheduleView(APIView):
 
 
 class ScheduleIdView(APIView):
+    @permission_check(['Common User'])
+    def get(self, request, schedule_id):
+        """
+        get schedule by id
+        """
+        schedule = Schedule.objects.filter(id=schedule_id).first()
+        if not schedule:
+            return json.response({'result': 1, 'message': "未找到编号对应的行程"})
+        return json.response(ScheduleSerializer(schedule).data)
+
     @permission_check(['Train Admin'], user=True)
     def put(self, request, schedule_id, user):
         """
