@@ -17,7 +17,7 @@ class ScheduleView(APIView):
         """
         schedule_id_to_change = request.query_params.get('change', -1)
         schedule_to_change = Schedule.objects.filter(id=schedule_id_to_change).first()
-        if schedule_to_change != -1 and not schedule_to_change:
+        if schedule_id_to_change != -1 and not schedule_to_change:
             return json.response({'result': 1, 'message': "没有找到改签之前的行程"})
         schedules = Schedule.objects.all()
         if schedule_to_change:
