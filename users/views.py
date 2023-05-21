@@ -103,7 +103,7 @@ def login(request):
         settings.SECRET_KEY,
     )
 
-    return json.response({'result': 1, 'message': "登陆成功", 'jwt': user_jwt})
+    return json.response({'result': 0, 'message': "登陆成功", 'jwt': user_jwt})
 
 
 class UserView(APIView):
@@ -144,6 +144,14 @@ class UserView(APIView):
 
 
 class UserIdView(APIView):
+    @permission_check(['System Admin'])
+    def get(self, request, user_id):
+        user = User.objects.filter(id=user_id).first()
+        if not user:
+            json.response({'result': 1, 'message': "用户不存在"})
+
+        return json.response(UserSerializer(user).data)
+
     @permission_check(['System Admin'])
     def put(self, request, user_id):
         if not User.objects.filter(id=user_id).exists():
@@ -188,3 +196,9 @@ class UserIdView(APIView):
         user.delete()
 
         return json.response({'result': 0, 'message': "用户已删除"})
+
+
+@api_view(['GET'])
+@permission_check(user=True)
+def get_current_user(request, user):
+    return json.response(UserSerializer(user).data)

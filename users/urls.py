@@ -7,5 +7,6 @@ urlpatterns = [
     path("register", views.start_register),
     path("register/<code>", views.verify_register),
     path("<int:user_id>", views.UserIdView.as_view()),
+    path("me", views.get_current_user),
     path("", views.UserView.as_view()),
 ]
