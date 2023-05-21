@@ -20,14 +20,18 @@ class ScheduleView(APIView):
         if schedule_id_to_change != -1 and not schedule_to_change:
             return json.response({'result': 1, 'message': "没有找到改签之前的行程"})
         
-        departure_time = request.query_params.get('time', None)
+        departure_time_after = request.query_params.get('after', None)
+        departure_time_before = request.query_params.get('before', None)
         ori_station_id = request.query_params.get('ori', None)
         dst_station_id = request.query_params.get('dst', None)
 
         schedules = Schedule.objects
 
-        if departure_time:
-            schedules = schedules.filter(departure_time__gte=departure_time)
+        if departure_time_after:
+            schedules = schedules.filter(departure_time__gte=departure_time_after)
+
+        if departure_time_before:
+            schedules = schedules.filter(departure_time__lte=departure_time_before)
 
         schedules = schedules.all()
 
