@@ -19,7 +19,26 @@ class ScheduleView(APIView):
         schedule_to_change = Schedule.objects.filter(id=schedule_id_to_change).first()
         if schedule_id_to_change != -1 and not schedule_to_change:
             return json.response({'result': 1, 'message': "没有找到改签之前的行程"})
-        schedules = Schedule.objects.all()
+        
+        departure_time = request.query_params.get('time', None)
+        ori_station_id = request.query_params.get('ori', None)
+        dst_station_id = request.query_params.get('dst', None)
+
+        schedules = Schedule.objects
+
+        if departure_time:
+            schedules = schedules.filter(departure_time__gte=departure_time)
+
+        schedules = schedules.all()
+
+        if ori_station_id:
+            ori_station_id = int(ori_station_id)
+            schedules = filter(lambda elm: elm.scheduletostation_set.first().station.id == ori_station_id, schedules)
+
+        if dst_station_id:
+            dst_station_id = int(dst_station_id)
+            schedules = filter(lambda elm: elm.scheduletostation_set.last().station.id == dst_station_id, schedules)
+        
         if schedule_to_change:
             schedules = filter(lambda elm: elm.is_option_schedule(schedule_to_change), schedules)
 

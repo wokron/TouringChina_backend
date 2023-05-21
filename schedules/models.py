@@ -38,10 +38,10 @@ class Schedule(models.Model):
             schedule2carriage.save()
 
     def is_option_schedule(self, obj):
-        self_first = self.stations.first()
-        self_last = self.stations.last()
-        obj_first = obj.stations.first()
-        obj_last = obj.stations.last()
+        self_first = self.scheduletostation_set.first().station
+        self_last = self.scheduletostation_set.last().station
+        obj_first = obj.scheduletostation_set.first().station
+        obj_last = obj.scheduletostation_set.last().station
         return (obj != self) and self_first == obj_first and self_last == obj_last
 
 
