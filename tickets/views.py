@@ -63,10 +63,22 @@ class TicketView(APIView):
         )
         ticket.save()
 
-        return json.response({'result': 0, 'message': "订票成功，请支付订单"})
+        return json.response({'result': 0, 'message': "订票成功，请支付订单", 'ticket_id': ticket.id})
 
 
 class TicketIdView(APIView):
+    @permission_check(['Common User'], user=True)
+    def get(self, request, ticket_id, user):
+        """
+        get ticket by id
+        """
+        ticket = user.tickets.filter(id=ticket_id).first()
+
+        if not ticket:
+            return json.response({'result': 1, 'message': "车票未找到"})
+
+        return json.response(TicketSerializer(ticket).data)
+
     @permission_check(['Common User'], user=True)
     def put(self, request, ticket_id, user):
         """
