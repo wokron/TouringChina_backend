@@ -1,7 +1,9 @@
 from collections import Counter
 from datetime import datetime
+import decimal
 
 from django.db import models
+from django.conf import settings
 
 
 # Create your models here.
@@ -70,3 +72,21 @@ class ScheduleToCarriage(models.Model):
     schedule = models.ForeignKey(to="Schedule", on_delete=models.CASCADE)
     carriage = models.ForeignKey(to="Carriage", on_delete=models.CASCADE)
     num = models.IntegerField()
+
+    def calc_cost(self):
+        station_num = self.schedule.stations.count()
+        carriage_increase_rate = self.carriage.increase_rate
+
+        return (decimal.Decimal(carriage_increase_rate) * (
+            (decimal.Decimal(station_num) - 1) *
+            settings.AVG_KM_BETWEEN_STATION *
+            settings.ADDITION_COST_PER_KM
+        )).quantize(decimal.Decimal('0.00'))
+    
+    def get_seat_info(self):
+        schedule2carriage = ScheduleToCarriage.objects.get(schedule=self.schedule, carriage=self.carriage)
+        max_seat = schedule2carriage.num * schedule2carriage.carriage.seat_num
+        now_seat = self.schedule.tickets.filter(carriage=self.carriage).count()
+
+        return max_seat, now_seat
+
