@@ -28,6 +28,7 @@ class TicketView(APIView):
         carriage_id = request.data.get('carriage_id', None)
         ori_station_id = request.data.get('ori_station_id', None)
         dst_station_id = request.data.get('dst_station_id', None)
+        only_get_price = request.query_params.get('only_get_price', 'false') == 'true'
 
         if not schedule_id or not contact_id or not carriage_id or not ori_station_id or not dst_station_id:
             return json.response({'result': 1, 'message': "需要包含行程、联系人、座位类型和起终站点信息"})
@@ -56,7 +57,13 @@ class TicketView(APIView):
         if not contact:
             return json.response({'result': 1, 'message': "未找到联系人"})
 
-        amount = schedule2carriage.calc_cost()
+        amount = schedule2carriage.calc_cost(ori_station, dst_station)
+
+        if only_get_price:
+            if amount is not None:
+                return json.response({'result': 0, 'message': "获得金额成功", 'price': amount})
+            else:
+                return json.response({'result': 1, 'message': "获得金额失败", 'price': amount})
 
         ticket = Ticket(
             amount=amount,
@@ -118,7 +125,7 @@ class TicketIdView(APIView):
         if now_seat >= max_seat:
             return json.response({'result': 1, 'message': "该类座位已满"})
 
-        amount = new_schedule2carriage.calc_cost()
+        amount = new_schedule2carriage.calc_cost(ticket.ori_station, ticket.dst_station)
 
         ticket.create_time = datetime.now()
         ticket.seat_no = now_seat

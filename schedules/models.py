@@ -82,12 +82,18 @@ class ScheduleToCarriage(models.Model):
     carriage = models.ForeignKey(to="Carriage", on_delete=models.CASCADE)
     num = models.IntegerField()
 
-    def calc_cost(self):
-        station_num = self.schedule.stations.count()
+    def calc_cost(self, ori_station, dst_station):
+        self_ori = self.schedule.scheduletostation_set.filter(station=ori_station).first()
+        self_dst = self.schedule.scheduletostation_set.filter(station=dst_station).first()
+
+        if not self_ori or not self_dst:
+            return None
+
+        station_num = self_dst.order - self_ori.order
         carriage_increase_rate = self.carriage.increase_rate
 
         return (decimal.Decimal(carriage_increase_rate) * (
-            (decimal.Decimal(station_num) - 1) *
+            (decimal.Decimal(station_num)) *
             settings.AVG_KM_BETWEEN_STATION *
             settings.ADDITION_COST_PER_KM
         )).quantize(decimal.Decimal('0.00'))

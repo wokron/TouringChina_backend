@@ -18,18 +18,14 @@ class CarriageSerializer(serializers.ModelSerializer):
 class ScheduleToCarriageSerializer(serializers.ModelSerializer):
     carriage = CarriageSerializer()
     rest_seats = serializers.SerializerMethodField()
-    price = serializers.SerializerMethodField()
 
     class Meta:
         model = ScheduleToCarriage
-        fields = ['carriage', 'num', 'rest_seats', 'price']
+        fields = ['carriage', 'num', 'rest_seats']
 
     def get_rest_seats(self, obj):
         max_seat, now_seat = obj.get_seat_info()
-        return max_seat - now_seat 
-    
-    def get_price(self, obj):
-        return obj.calc_cost()
+        return max_seat - now_seat
 
 
 class ScheduleToStationSerializer(serializers.ModelSerializer):
