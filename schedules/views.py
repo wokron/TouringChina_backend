@@ -5,6 +5,7 @@ from rest_framework.views import APIView
 from schedules.models import Schedule, Station, Carriage
 from schedules.serializers import ScheduleSerializer, StationSerializer, CarriageSerializer
 from system_messages.models import Message
+from tickets.models import Ticket
 from utils import json
 from utils.perm import permission_check
 
@@ -15,10 +16,10 @@ class ScheduleView(APIView):
         """
         list all train schedule
         """
-        schedule_id_to_change = request.query_params.get('change', -1)
-        schedule_to_change = Schedule.objects.filter(id=schedule_id_to_change).first()
-        if schedule_id_to_change != -1 and not schedule_to_change:
-            return json.response({'result': 1, 'message': "没有找到改签之前的行程"})
+        ticket_id_to_change = request.query_params.get('change', -1)
+        ticket_to_change = Ticket.objects.filter(id=ticket_id_to_change).first()
+        if ticket_id_to_change != -1 and not ticket_to_change:
+            return json.response({'result': 1, 'message': "没有找到改签之前的车票"})
         
         departure_time_after = request.query_params.get('after', None)
         departure_time_before = request.query_params.get('before', None)
@@ -35,16 +36,13 @@ class ScheduleView(APIView):
 
         schedules = schedules.all()
 
-        if ori_station_id:
-            ori_station_id = int(ori_station_id)
-            schedules = filter(lambda elm: elm.scheduletostation_set.first().station.id == ori_station_id, schedules)
-
-        if dst_station_id:
-            dst_station_id = int(dst_station_id)
-            schedules = filter(lambda elm: elm.scheduletostation_set.last().station.id == dst_station_id, schedules)
+        ori_station = Station.objects.filter(id=ori_station_id).first() if ori_station_id else None
+        dst_station = Station.objects.filter(id=dst_station_id).first() if dst_station_id else None
         
-        if schedule_to_change:
-            schedules = filter(lambda elm: elm.is_option_schedule(schedule_to_change), schedules)
+        schedules = filter(lambda elm: elm.is_option_schedule(ori_station, dst_station), schedules)
+
+        if ticket_to_change:
+            schedules = filter(lambda elm: elm.is_option_schedule(ticket_to_change.ori_station, ticket_to_change.dst_station), schedules)
 
         return json.response({"schedules": ScheduleSerializer(schedules, many=True).data})
 

@@ -2,7 +2,7 @@ from datetime import datetime
 
 from rest_framework.views import APIView
 
-from schedules.models import ScheduleToCarriage
+from schedules.models import ScheduleToCarriage, Station
 from tickets.models import Ticket
 from tickets.serializers import TicketSerializer
 from utils import json
@@ -26,24 +26,35 @@ class TicketView(APIView):
         schedule_id = request.data.get('schedule_id', None)
         contact_id = request.data.get('contact_id', None)
         carriage_id = request.data.get('carriage_id', None)
+        ori_station_id = request.data.get('ori_station_id', None)
+        dst_station_id = request.data.get('dst_station_id', None)
 
-        if not schedule_id or not contact_id or not carriage_id:
-            return json.response({'result': 1, 'message': "需要包含行程、联系人和座位类型"})
+        if not schedule_id or not contact_id or not carriage_id or not ori_station_id or not dst_station_id:
+            return json.response({'result': 1, 'message': "需要包含行程、联系人、座位类型和起终站点信息"})
         
         schedule2carriage = ScheduleToCarriage.objects.filter(schedule_id=schedule_id, carriage_id=carriage_id).first()
 
         if not schedule2carriage:
             return json.response({'result': 1, 'message': "未找到行程与对应的座位组合"})
+        
+        ori_station = Station.objects.filter(id=ori_station_id).first()
+        dst_station = Station.objects.filter(id=dst_station_id).first()
 
-        contact = user.contacts.filter(id=contact_id).first()
-
-        if not contact:
-            return json.response({'result': 1, 'message': "未找到联系人"})
+        if not ori_station or not dst_station:
+            return json.response({'result': 1, 'message': "未找到起终站点"})
+        
+        if not schedule2carriage.schedule.is_option_schedule(ori_station, dst_station):
+            return json.response({'result': 1, 'message': "该行程和起终站点不匹配"})
 
         max_seat, now_seat = schedule2carriage.get_seat_info()
 
         if now_seat >= max_seat:
             return json.response({'result': 1, 'message': "该类座位已满"})
+
+        contact = user.contacts.filter(id=contact_id).first()
+
+        if not contact:
+            return json.response({'result': 1, 'message': "未找到联系人"})
 
         amount = schedule2carriage.calc_cost()
 
@@ -54,6 +65,8 @@ class TicketView(APIView):
             carriage=schedule2carriage.carriage,
             contact=contact,
             user=user,
+            ori_station=ori_station,
+            dst_station=dst_station,
         )
         ticket.save()
 
@@ -97,7 +110,7 @@ class TicketIdView(APIView):
         if not ticket.is_schedule_modified and not ticket.is_changeable():
             return json.response({'result': 1, 'message': "该车票不可改签"})
 
-        if not ticket.schedule.is_option_schedule(new_schedule2carriage.schedule):
+        if not ticket.schedule.is_option_schedule(ticket.ori_station, ticket.dst_station):
             return json.response({'result': 1, 'message': "改签行程必须和原行程起始点相同"})
 
         max_seat, now_seat = new_schedule2carriage.get_seat_info()

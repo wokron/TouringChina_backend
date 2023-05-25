@@ -5,7 +5,7 @@ from django.db import models
 from django.utils import timezone
 
 from contacts.models import Contact
-from schedules.models import Schedule, Carriage
+from schedules.models import Schedule, Carriage, Station
 
 
 # Create your models here.
@@ -18,6 +18,8 @@ class Ticket(models.Model):
 
     schedule = models.ForeignKey(to=Schedule, on_delete=models.SET_NULL, null=True, related_name='tickets')
     carriage = models.ForeignKey(to=Carriage, on_delete=models.CASCADE)
+    ori_station = models.ForeignKey(to=Station, on_delete=models.RESTRICT, null=True, related_name='tickets_as_ori')
+    dst_station = models.ForeignKey(to=Station, on_delete=models.RESTRICT, null=True, related_name='tickets_as_dst')
 
     user = models.ForeignKey(to=User, on_delete=models.CASCADE, related_name='tickets')
     contact = models.ForeignKey(to=Contact, on_delete=models.RESTRICT, related_name='tickets')

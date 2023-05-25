@@ -39,12 +39,21 @@ class Schedule(models.Model):
             )
             schedule2carriage.save()
 
-    def is_option_schedule(self, obj):
-        self_first = self.scheduletostation_set.first().station
-        self_last = self.scheduletostation_set.last().station
-        obj_first = obj.scheduletostation_set.first().station
-        obj_last = obj.scheduletostation_set.last().station
-        return (obj != self) and self_first == obj_first and self_last == obj_last
+    def is_option_schedule(self, ori_station, dst_station):
+        if not ori_station and not dst_station:
+            return True
+        elif ori_station and not dst_station:
+            return self.stations.filter(id=ori_station.id).exists()
+        elif not ori_station and dst_station:
+            return self.stations.filter(id=dst_station.id).exists()
+        else:
+            self_ori = self.scheduletostation_set.filter(station=ori_station).first()
+            self_dst = self.scheduletostation_set.filter(station=dst_station).first()
+
+            if not self_ori or not self_dst:
+                return False
+            
+            return self_ori.order < self_dst.order
 
 
 class Station(models.Model):

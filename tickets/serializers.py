@@ -32,6 +32,8 @@ class TicketSerializer(serializers.ModelSerializer):
     schedule = ScheduleSerializer()
     carriage = CarriageSerializer()
     contact = ContactSerializer()
+    ori_station = StationSerializer()
+    dst_station = StationSerializer()
 
     class Meta:
         model = Ticket
