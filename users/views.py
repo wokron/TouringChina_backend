@@ -112,7 +112,21 @@ class UserView(APIView):
         """
         list all users, permission "System Admin" is required
         """
-        return json.response({'users': [UserSerializer(u).data for u in User.objects.all()]})
+        name = request.query_params.get('name', None)
+        email = request.query_params.get('email', None)
+        role = request.query_params.get('role', None)
+
+        users = User.objects
+        if name:
+            users = users.filter(username__icontains=name)
+        if email:
+            users = users.filter(email__icontains=email)
+        if role:
+            group = Group.objects.filter(name=role).first()
+            users = users.filter(groups__in=[group])
+        users = users.all()
+
+        return json.response({'users': UserSerializer(users, many=True).data})
 
     @permission_check(['System Admin'])
     def post(self, request):
