@@ -141,8 +141,6 @@ class ScheduleIdView(APIView):
         if not schedule:
             json.response({'result': 1, 'message': "未找到要删除的行程"})
 
-        schedule.delete()
-
         message = Message(
             message=f"您购买的车次”{schedule.schedule_no}“已被取消。您可以免费改签其他车次",
             from_user=user,
@@ -153,6 +151,8 @@ class ScheduleIdView(APIView):
             ticket.is_schedule_modified = True
             ticket.save()
             message.to_users.add(ticket.user)
+
+        schedule.delete()
 
         return json.response({'result': 0, 'message': "行程已删除"})
 
