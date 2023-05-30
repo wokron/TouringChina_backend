@@ -31,7 +31,7 @@ class Ticket(models.Model):
         return not self.is_paid or self.is_expired()
 
     def is_cancelable(self):
-        return self.is_paid and datetime.now() + timedelta(hours=1) < self.schedule.departure_time
+        return self.is_paid and timezone.now() + timedelta(hours=1) < self.schedule.departure_time
 
     def is_changeable(self):
-        return self.is_paid and datetime.now() + timedelta(days=1) < self.schedule.departure_time
+        return self.is_paid and timezone.now() + timedelta(days=1) < self.schedule.departure_time
