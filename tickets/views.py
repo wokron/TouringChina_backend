@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from django.db import transaction
 from rest_framework.views import APIView
 
 from schedules.models import ScheduleToCarriage, Station
@@ -47,37 +48,38 @@ class TicketView(APIView):
         if not schedule2carriage.schedule.is_option_schedule(ori_station, dst_station):
             return json.response({'result': 1, 'message': "该行程和起终站点不匹配"})
 
-        max_seat, now_seat = schedule2carriage.get_seat_info()
+        with transaction.atomic():  # must guarantee that tickets number won't change after check
+            max_seat, now_seat = schedule2carriage.get_seat_info()
 
-        if now_seat >= max_seat:
-            return json.response({'result': 1, 'message': "该类座位已满"})
+            if now_seat >= max_seat:
+                return json.response({'result': 1, 'message': "该类座位已满"})
 
-        contact = user.contacts.filter(id=contact_id).first()
+            contact = user.contacts.filter(id=contact_id).first()
 
-        if not contact:
-            return json.response({'result': 1, 'message': "未找到联系人"})
+            if not contact:
+                return json.response({'result': 1, 'message': "未找到联系人"})
 
-        amount = schedule2carriage.calc_cost(ori_station, dst_station)
+            amount = schedule2carriage.calc_cost(ori_station, dst_station)
 
-        if only_get_price:
-            if amount is not None:
-                return json.response({'result': 0, 'message': "获得金额成功", 'price': amount})
-            else:
-                return json.response({'result': 1, 'message': "获得金额失败", 'price': amount})
+            if only_get_price:
+                if amount is not None:
+                    return json.response({'result': 0, 'message': "获得金额成功", 'price': amount})
+                else:
+                    return json.response({'result': 1, 'message': "获得金额失败", 'price': amount})
 
-        ticket = Ticket(
-            amount=amount,
-            seat_no=now_seat,
-            schedule=schedule2carriage.schedule,
-            carriage=schedule2carriage.carriage,
-            contact=contact,
-            user=user,
-            ori_station=ori_station,
-            dst_station=dst_station,
-        )
-        ticket.save()
+            ticket = Ticket(
+                amount=amount,
+                seat_no=now_seat,
+                schedule=schedule2carriage.schedule,
+                carriage=schedule2carriage.carriage,
+                contact=contact,
+                user=user,
+                ori_station=ori_station,
+                dst_station=dst_station,
+            )
+            ticket.save()
 
-        return json.response({'result': 0, 'message': "订票成功，请支付订单", 'ticket_id': ticket.id})
+            return json.response({'result': 0, 'message': "订票成功，请支付订单", 'ticket_id': ticket.id})
 
 
 class TicketIdView(APIView):
@@ -120,26 +122,27 @@ class TicketIdView(APIView):
         if not ticket.schedule.is_option_schedule(ticket.ori_station, ticket.dst_station):
             return json.response({'result': 1, 'message': "改签行程必须和原行程起始点相同"})
 
-        max_seat, now_seat = new_schedule2carriage.get_seat_info()
+        with transaction.atomic():  # must guarantee that tickets number won't change after check
+            max_seat, now_seat = new_schedule2carriage.get_seat_info()
 
-        if now_seat >= max_seat:
-            return json.response({'result': 1, 'message': "该类座位已满"})
+            if now_seat >= max_seat:
+                return json.response({'result': 1, 'message': "该类座位已满"})
 
-        amount = new_schedule2carriage.calc_cost(ticket.ori_station, ticket.dst_station)
+            amount = new_schedule2carriage.calc_cost(ticket.ori_station, ticket.dst_station)
 
-        ticket.create_time = datetime.now()
-        ticket.seat_no = now_seat
-        ticket.schedule = new_schedule2carriage.schedule
-        ticket.carriage = new_schedule2carriage.carriage
-        ticket.is_schedule_modified = False
+            ticket.create_time = datetime.now()
+            ticket.seat_no = now_seat
+            ticket.schedule = new_schedule2carriage.schedule
+            ticket.carriage = new_schedule2carriage.carriage
+            ticket.is_schedule_modified = False
 
-        if not ticket.is_schedule_modified:
-            ticket.is_paid = False
-            ticket.amount = amount - ticket.amount
+            if not ticket.is_schedule_modified:
+                ticket.is_paid = False
+                ticket.amount = amount - ticket.amount
 
-        ticket.save()
+            ticket.save()
 
-        return json.response({'result': 0, 'message': "车票已改签"})
+            return json.response({'result': 0, 'message': "车票已改签"})
 
     @permission_check(['Common User'], user=True)
     def patch(self, request, ticket_id, user):
