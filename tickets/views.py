@@ -194,7 +194,7 @@ class TicketIdView(APIView):
         if not ticket:
             return json.response({'result': 1, 'message': "订单未找到"})
 
-        if ticket and (ticket.is_deletable() or ticket.is_deletable()):
+        if ticket and (ticket.is_deletable() or ticket.is_cancelable()):
             ticket.delete()
             return json.response({'result': 0, 'message': "订单已取消" if ticket.is_paid else "订单已删除"})
 
