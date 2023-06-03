@@ -23,6 +23,7 @@ def start_register(request):
     name = request.data.get('name', "")
     passwd = request.data.get('passwd', "")
     email = request.data.get('email', "")
+    host = request.data.get('host', request.get_host().split(':')[0])
 
     if User.objects.filter(username=name).exists():
         return json.response({'result': 1, 'message': "用户名已被注册"})
@@ -44,7 +45,7 @@ def start_register(request):
         utils.mail.send_mail(
             "畅游中国用户注册",
             "请按提示完成注册验证",
-            render_to_string("verify_link.html", {'url': f"{request.build_absolute_uri()}/{code}"}),
+            render_to_string("verify_link.html", {'url': f"http://{host}:8000/users/register/{code}"}),
             from_email=settings.EMAIL_HOST_USER,
             to=[email],
         )
