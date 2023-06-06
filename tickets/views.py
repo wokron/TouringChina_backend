@@ -193,13 +193,29 @@ class TicketIdView(APIView):
         """
         delete un-payed ticket order or cancel payed ticket
         """
+        account_id = request.data.get('account_id', None)
         ticket = user.tickets.filter(id=ticket_id).first()
 
         if not ticket:
             return json.response({'result': 1, 'message': "订单未找到"})
-
-        if ticket and (ticket.is_deletable() or ticket.is_cancelable()):
+        
+        if ticket.is_deletable():
             ticket.delete()
-            return json.response({'result': 0, 'message': "订单已取消" if ticket.is_paid else "订单已删除"})
+            return json.response({'result': 0, 'message': "订单已删除"})
+
+        if ticket.is_cancelable():
+            if not account_id:
+                return json.response({'result': 1, 'message': "取消车票必须选择退款账户"})
+
+            account = user.accounts.filter(id=account_id).first()
+
+            if not account:
+                return json.response({'result': 1, 'message': "未找到账户"})
+            
+            account.amount += ticket.amount
+            account.save()
+            ticket.delete()
+
+            return json.response({'result': 0, 'message': "订单已取消"})
 
         return json.response({'result': 1, 'message': "订单不可取消" if ticket.is_paid else "订单不可删除"})
