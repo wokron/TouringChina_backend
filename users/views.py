@@ -179,7 +179,13 @@ class UserIdView(APIView):
         email = request.data.get('email', None)
         roles = request.data.get('role', None)
 
-        if name and not User.objects.filter(username=name).exists():
+        if name and User.objects.filter(username=name).exists():
+            return json.response({'result': 1, 'message': "用户名已存在"})
+
+        if email and User.objects.filter(email=email).exists():
+            return json.response({'result': 1, 'message': "邮箱已存在"})
+
+        if name:
             user.username = name
 
         if passwd:
