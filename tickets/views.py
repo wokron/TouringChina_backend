@@ -1,6 +1,7 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from django.db import transaction
+from django.utils import timezone
 from rest_framework.views import APIView
 
 from schedules.models import ScheduleToCarriage, Station
@@ -119,8 +120,11 @@ class TicketIdView(APIView):
         if not ticket.is_schedule_modified and not ticket.is_changeable():
             return json.response({'result': 1, 'message': "该车票不可改签"})
 
-        if not ticket.schedule.is_option_schedule(ticket.ori_station, ticket.dst_station):
+        if not new_schedule2carriage.schedule.is_option_schedule(ticket.ori_station, ticket.dst_station):
             return json.response({'result': 1, 'message': "改签行程必须和原行程起始点相同"})
+
+        if ticket.schedule and new_schedule2carriage.schedule.departure_time > ticket.schedule.departure_time + timedelta(hours=24):
+            return json.response({'result': 1, 'message': "改签的新时间不能超过原始时间的24小时"})
 
         with transaction.atomic():  # must guarantee that tickets number won't change after check
             max_seat, now_seat = new_schedule2carriage.get_seat_info()
@@ -130,7 +134,7 @@ class TicketIdView(APIView):
 
             amount = new_schedule2carriage.calc_cost(ticket.ori_station, ticket.dst_station)
 
-            ticket.create_time = datetime.now()
+            ticket.create_time = timezone.now()
             ticket.seat_no = now_seat
             ticket.schedule = new_schedule2carriage.schedule
             ticket.carriage = new_schedule2carriage.carriage
